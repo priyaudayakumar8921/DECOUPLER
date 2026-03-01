@@ -118,7 +118,10 @@
         <div id="screen-main" class="screen">
             <h1 class="arcade-font text-5xl md:text-7xl mb-4 glitch-text">DE-COUPLER</h1>
             <p class="text-zinc-400 mb-10 tracking-[0.3em] uppercase font-bold text-sm">Single People's Revenge</p>
-            <button onclick="showScreen('screen-setup')" class="btn arcade-font text-xl">START MISSION</button>
+            <div class="flex flex-col gap-3">
+                <button id="resume-btn" onclick="resumeGame()" class="btn arcade-font text-xl" disabled>RESUME</button>
+                <button onclick="startNewGame()" class="btn arcade-font text-xl">NEW GAME</button>
+            </div>
         </div>
 
         <!-- Setup Screen -->
@@ -196,6 +199,8 @@
         let currentLevel = 1;
         let unlockedLevel = 1;
         let gameActive = false;
+        const userProgress = {};
+        let isResumeMode = false;
         let score = 0;
         let health = 100;
         let selectedSingle = "";
@@ -227,13 +232,56 @@
             document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
             document.getElementById('hud').classList.add('hidden');
             document.getElementById(id).classList.remove('hidden');
-            if (id === 'screen-main' || id === 'screen-setup') {
-                currentLevel = 1;
-                unlockedLevel = 1;
-            }
+            if (id === 'screen-main') updateResumeButton();
             if (id === 'screen-setup') renderSetup();
-            if (id === 'screen-levels') renderLevelGrid();
+            if (id === 'screen-levels') {
+                prepareProgressForSelectedUser();
+                renderLevelGrid();
+            }
             gameActive = false;
+        }
+
+        function updateResumeButton() {
+            const resumeBtn = document.getElementById('resume-btn');
+            if (!resumeBtn) return;
+            resumeBtn.disabled = Object.keys(userProgress).length === 0;
+        }
+
+        function prepareProgressForSelectedUser() {
+            const userKey = selectedSingle.trim();
+            if (!userKey) {
+                unlockedLevel = 1;
+                return;
+            }
+            const profile = userProgress[userKey];
+            if (isResumeMode && profile) {
+                unlockedLevel = profile.unlockedLevel;
+                if (!selectedCouple && profile.lastCouple) selectedCouple = profile.lastCouple;
+                return;
+            }
+            unlockedLevel = 1;
+            userProgress[userKey] = { unlockedLevel: 1, lastCouple: selectedCouple };
+        }
+
+        function startNewGame() {
+            currentLevel = 1;
+            unlockedLevel = 1;
+            isResumeMode = false;
+            score = 0;
+            health = 100;
+            enemies = [];
+            projectiles = [];
+            selectedSingle = "";
+            selectedCouple = "";
+            document.getElementById('custom-single').value = '';
+            document.getElementById('custom-couple').value = '';
+            showScreen('screen-setup');
+        }
+
+        function resumeGame() {
+            if (Object.keys(userProgress).length === 0) return;
+            isResumeMode = true;
+            showScreen('screen-setup');
         }
 
         function renderSetup() {
@@ -245,12 +293,24 @@
         }
 
         function selectItem(type, val) {
-            if (type === 'single') { selectedSingle = val; document.getElementById('custom-single').value = ''; }
+            if (type === 'single') {
+                selectedSingle = val;
+                document.getElementById('custom-single').value = '';
+                if (isResumeMode && userProgress[selectedSingle]?.lastCouple) {
+                    selectedCouple = userProgress[selectedSingle].lastCouple;
+                }
+            }
             else { selectedCouple = val; document.getElementById('custom-couple').value = ''; }
             renderSetup();
         }
 
-        document.getElementById('custom-single').addEventListener('input', (e) => { selectedSingle = e.target.value; renderSetup(); });
+        document.getElementById('custom-single').addEventListener('input', (e) => {
+            selectedSingle = e.target.value;
+            if (isResumeMode && userProgress[selectedSingle]?.lastCouple) {
+                selectedCouple = userProgress[selectedSingle].lastCouple;
+            }
+            renderSetup();
+        });
         document.getElementById('custom-couple').addEventListener('input', (e) => { selectedCouple = e.target.value; renderSetup(); });
 
         function validateSetup() {
@@ -383,6 +443,14 @@
         function winLevel() {
             gameActive = false;
             playLevelCompleteSound();
+            if (currentLevel === unlockedLevel && unlockedLevel < 10) unlockedLevel++;
+            if (selectedSingle.trim()) {
+                userProgress[selectedSingle.trim()] = {
+                    unlockedLevel,
+                    lastCouple: selectedCouple
+                };
+            }
+            updateResumeButton();
             const winStageTitle = document.getElementById('win-stage-title');
             const winHeader = document.getElementById('win-header');
             const winMsg = document.getElementById('win-message');
