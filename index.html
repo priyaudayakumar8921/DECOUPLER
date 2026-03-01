@@ -159,7 +159,7 @@
             <h2 id="win-header" class="arcade-font text-5xl text-green-400 mb-2">STAGE CLEARED</h2>
             <div id="win-stage-title" class="text-yellow-400 arcade-font text-2xl mb-4"></div>
             <p id="win-message" class="text-zinc-400 mb-8 italic max-w-sm"></p>
-            <button id="next-level-btn" onclick="showScreen('screen-levels')" class="btn arcade-font">Next Target</button>
+            <button id="next-level-btn" onclick="handleNextLevelAction()" class="btn arcade-font">Next Target</button>
         </div>
 
         <!-- Game Over Screen -->
@@ -438,6 +438,14 @@
                 levelCompleteSound.currentTime = 0;
                 levelCompleteSound.play().catch(() => {});
             } catch (_) {}
+        }
+
+        function handleNextLevelAction() {
+            if (currentLevel < unlockedLevel) {
+                startGame(currentLevel + 1);
+                return;
+            }
+            showScreen('screen-levels');
         }
 
         function winLevel() {
