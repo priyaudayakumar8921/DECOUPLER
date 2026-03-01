@@ -118,7 +118,7 @@
         <div id="screen-main" class="screen">
             <h1 class="arcade-font text-5xl md:text-7xl mb-4 glitch-text">DE-COUPLER</h1>
             <p class="text-zinc-400 mb-10 tracking-[0.3em] uppercase font-bold text-sm">Single People's Revenge</p>
-            <button onclick="showScreen('screen-setup')" class="btn arcade-font text-xl">START MISSION</button>
+            <button onclick="startMission()" class="btn arcade-font text-xl">START MISSION</button>
         </div>
 
         <!-- Setup Screen -->
@@ -194,7 +194,7 @@
         };
 
         let currentLevel = 1;
-        let unlockedLevel = parseInt(localStorage.getItem('decoupler_unlocked') || '1');
+        let unlockedLevel = 1;
         let gameActive = false;
         let score = 0;
         let health = 100;
@@ -230,6 +230,12 @@
             if (id === 'screen-setup') renderSetup();
             if (id === 'screen-levels') renderLevelGrid();
             gameActive = false;
+        }
+
+        function startMission() {
+            currentLevel = 1;
+            unlockedLevel = 1;
+            showScreen('screen-setup');
         }
 
         function renderSetup() {
@@ -381,7 +387,6 @@
             playLevelCompleteSound();
             if (currentLevel === unlockedLevel && unlockedLevel < 10) {
                 unlockedLevel++;
-                localStorage.setItem('decoupler_unlocked', unlockedLevel);
             }
             const winStageTitle = document.getElementById('win-stage-title');
             const winHeader = document.getElementById('win-header');
